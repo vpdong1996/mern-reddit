@@ -1,0 +1,29 @@
+{
+  "name": "DVReddit-Server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node dist/index.ts",
+    "dev": "nodemon dist/index.js",
+    "start:2": "ts-node src/index.js",
+    "dev:2": "nodemon --exec src/index.js",
+    "watch": "tsc -w"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^14.14.37",
+    "nodemon": "^2.0.7",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.2.4"
+  },
+  "dependencies": {
+    "@mikro-orm/cli": "^4.5.3",
+    "@mikro-orm/core": "^4.5.3",
+    "@mikro-orm/migrations": "^4.5.3",
+    "@mikro-orm/postgresql": "^4.5.3",
+    "pg": "^8.5.1"
+  }
+}
