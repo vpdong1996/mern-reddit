@@ -1,5 +1,5 @@
 import { User } from "../entities/User";
-import { EmContext } from "src/types";
+import { HttpContext } from "src/types";
 import {
   Arg,
   Ctx,
@@ -7,6 +7,7 @@ import {
   InputType,
   Mutation,
   ObjectType,
+  Query,
   Resolver,
 } from "type-graphql";
 import argon2 from "argon2";
@@ -40,10 +41,18 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
+  @Query(() => User, { nullable: true })
+  async getInfo(@Ctx() { req, em }: HttpContext): Promise<User | null> {
+    if (!req.session.userId) return null;
+
+    const user = await em.findOne(User, { id: req.session.userId });
+    return user;
+  }
+
   @Mutation(() => UserResponse)
   async register(
     @Arg("options") options: UsernamePasswordDto,
-    @Ctx() { em }: EmContext
+    @Ctx() { em }: HttpContext
   ): Promise<UserResponse> {
     const { username, password } = options;
     if (username.length <= 2) {
@@ -64,14 +73,20 @@ export class UserResolver {
 
     const hashedPassword = await argon2.hash(password);
     const user = em.create(User, { username, password: hashedPassword });
-    await em.persistAndFlush(user);
+    try {
+      await em.persistAndFlush(user);
+    } catch (error) {
+      return {
+        errors: [{ field: error.table, message: error.detail }],
+      };
+    }
     return { user };
   }
 
   @Mutation(() => UserResponse)
   async login(
     @Arg("options") options: UsernamePasswordDto,
-    @Ctx() { em }: EmContext
+    @Ctx() { em, req }: HttpContext
   ): Promise<UserResponse> {
     const { username, password } = options;
     const user = await em.findOne(User, { username });
@@ -85,6 +100,11 @@ export class UserResolver {
       return {
         errors: [{ field: "password", message: "Incorrect password" }],
       };
+    
+    // Store user id session
+    // this will set a cookie on the user
+    // keep them logged in
+    req.session!.userId = user.id;
     return { user };
   }
 }
